@@ -1,0 +1,46 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# This workflow will initiate a Contrast Scan on your built artifact, and subsequently upload the results SARIF to Github.
+# Because Contrast Scan is designed to run against your deployable artifact, you need to build an artifact that will be passed to the Contrast Scan Action.
+# Contrast Scan currently supports Java, JavaScript and .NET artifacts.
+# For more information about the Contrast Scan GitHub Action see here: https://github.com/Contrast-Security-OSS/contrastscan-action
+
+# Pre-requisites:
+# All Contrast related account secrets should be configured as GitHub secrets to be passed as inputs to the Contrast Scan Action.
+# The required secrets are CONTRAST_API_KEY, CONTRAST_ORGANIZATION_ID and CONTRAST_AUTH_HEADER.
+name: Contrast local scan
+
+on:
+  push:
+    branches:
+    - '*'
+    - '!main'
+      
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  validate-code:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses : Contrast-Security-OSS/contrast-local-scan-action@v1.0.5
+        name: Run action against repoository
+        with:
+          apiUrl: ${{ secrets.CONTRAST__API__URL }}
+          apiUserName: ${{ secrets.CONTRAST__API__USER_NAME }}
+          apiKey: ${{ secrets.CONTRAST__API__API_KEY }}
+          apiServiceKey: ${{ secrets.CONTRAST__API__SERVICE_KEY }}
+          apiOrgId: ${{ secrets.CONTRAST__API__ORGANIZATION }}
+          checks: true
+          severity: critical
+          
+    #Upload the results to GitHub
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: results.sarif # The file name must be 'results.sarif', as this is what the Github Action will output
